@@ -1,0 +1,2 @@
+# This file keeps the uploads/ directory in git while ignoring its contents.
+# Profile pictures uploaded by users will be stored here.
