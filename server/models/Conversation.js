@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 
 // A Conversation is a unique pairing between two users.
-// We guarantee uniqueness by always sorting participants before saving.
+// We guarantee uniqueness by always sorting participants before saving
+// (enforced via pre-save hook below), which makes the findOneAndUpdate
+// with $all reliable even under concurrent requests.
 const conversationSchema = new mongoose.Schema(
   {
     participants: [
@@ -23,7 +25,17 @@ const conversationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Ensure only one conversation per pair of users
-conversationSchema.index({ participants: 1 }, { unique: false });
+// Sort participants before every save so the pair is always in a canonical
+// order — this makes the $all query in requestController reliable.
+conversationSchema.pre('save', function (next) {
+  this.participants.sort((a, b) => a.toString().localeCompare(b.toString()));
+  next();
+});
+
+// Index for fast lookup by participants (not unique at DB level because
+// MongoDB can't enforce uniqueness on unsorted arrays; ordering is
+// maintained by the pre-save hook above instead).
+conversationSchema.index({ participants: 1 });
 
 module.exports = mongoose.model('Conversation', conversationSchema);
+

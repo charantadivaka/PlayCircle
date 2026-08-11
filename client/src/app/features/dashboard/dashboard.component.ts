@@ -61,8 +61,14 @@ L.Marker.prototype.options.icon = iconDefault;
             <p class="text-sm text-muted mb-4">Please enable location permissions in your browser to find players nearby.</p>
             <button class="btn btn-outline btn-sm" (click)="requestLocation()">Try Again</button>
           </div>
+
+          <div *ngIf="!isLoading && fetchError" class="p-4 text-center">
+            <div class="text-danger font-bold mb-2">⚠ Error</div>
+            <p class="text-sm text-muted mb-4">{{ fetchError }}</p>
+            <button class="btn btn-outline btn-sm" (click)="fetchPlayers()">Retry</button>
+          </div>
           
-          <div *ngIf="!isLoading && !locationDenied && players().length === 0" class="p-4 text-center">
+          <div *ngIf="!isLoading && !locationDenied && !fetchError && players().length === 0" class="p-4 text-center">
             <p class="text-muted">No players found within {{ selectedRadius }}km.</p>
           </div>
           
@@ -123,6 +129,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   players = signal<User[]>([]);
   isLoading = true;
   locationDenied = false;
+  fetchError = '';
   myCoords: Coords | null = null;
 
   constructor(
@@ -165,11 +172,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   fetchPlayers() {
     if (!this.myCoords) return;
     this.isLoading = true;
-    
+    this.fetchError = '';
+
     this.userService.getNearbyPlayers(
-      this.myCoords.lat, 
-      this.myCoords.lng, 
-      this.selectedRadius, 
+      this.myCoords.lat,
+      this.myCoords.lng,
+      this.selectedRadius,
       this.selectedSport
     ).subscribe({
       next: (res: any) => {
@@ -186,6 +194,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isLoading = false;
       },
       error: (err: any) => {
+        this.fetchError = err?.error?.message || 'Failed to load nearby players. Please try again.';
         this.isLoading = false;
       }
     });
@@ -277,15 +286,29 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         
         const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(this.map!);
         
-        // Popup with a button to view profile
+        // Build popup with a data-attribute button — no href so no page reload
         const popupContent = `
           <div style="text-align:center; padding:5px;">
             <div style="font-weight:bold; margin-bottom:5px;">${player.name}</div>
             <div style="font-size:12px; margin-bottom:10px; color:#888;">${player.sports.join(', ')}</div>
-            <a href="/profile/${player._id}" style="background:var(--color-primary); color:#000; padding:5px 10px; border-radius:4px; text-decoration:none; display:inline-block; font-size:12px; font-weight:bold;">View Profile</a>
+            <button
+              data-player-id="${player._id}"
+              style="background:var(--color-primary); color:#000; padding:5px 10px; border-radius:4px; border:none; font-size:12px; font-weight:bold; cursor:pointer;">
+              View Profile
+            </button>
           </div>
         `;
-        marker.bindPopup(popupContent);
+
+        const popup = L.popup().setContent(popupContent);
+        marker.bindPopup(popup);
+
+        // Wire Angular router navigation when the popup opens
+        marker.on('popupopen', () => {
+          const btn = document.querySelector<HTMLButtonElement>(`button[data-player-id="${player._id}"]`);
+          if (btn) {
+            btn.onclick = () => this.router.navigate(['/profile', player._id]);
+          }
+        });
         
         this.markers.set(player._id, marker);
       }

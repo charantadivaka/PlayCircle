@@ -15,6 +15,11 @@ const playRequestSchema = new mongoose.Schema(
     sport: {
       type: String,
       required: true,
+      enum: [
+        'Cricket', 'Football', 'Badminton', 'Volleyball',
+        'Basketball', 'Tennis', 'Chess', 'Table Tennis',
+        'Running', 'Cycling',
+      ],
     },
     message: {
       type: String,

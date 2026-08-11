@@ -23,6 +23,8 @@ export class UserService {
     return this.http.patch<{ user: User }>(`${this.API}/users/profile`, formData);
   }
 
+  // REST fallback for location update. In production this is handled via
+  // SocketService.updateLocation() in LocationService. Kept here for future use.
   updateLocation(lng: number, lat: number) {
     return this.http.patch(`${this.API}/users/location`, { lng, lat });
   }

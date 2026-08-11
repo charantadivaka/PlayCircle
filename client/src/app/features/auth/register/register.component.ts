@@ -110,6 +110,7 @@ export class RegisterComponent {
     
     this.auth.register(this.registerForm.value).subscribe({
       next: () => {
+        this.isLoading = false;
         this.router.navigate(['/dashboard']);
       },
       error: (err: any) => {

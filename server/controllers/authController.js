@@ -60,18 +60,20 @@ const login = async (req, res, next) => {
 
     const token = signToken(user._id);
 
-    // Strip passwordHash from response
-    user.passwordHash = undefined;
-
-    res.json({ token, user });
+    // toJSON() hook on the User model strips passwordHash, socketId, __v
+    res.json({ token, user: user.toJSON() });
   } catch (err) {
     next(err);
   }
 };
 
 // GET /api/auth/me  (protected)
-const getMe = async (req, res) => {
-  res.json({ user: req.user });
+const getMe = async (req, res, next) => {
+  try {
+    res.json({ user: req.user });
+  } catch (err) {
+    next(err);
+  }
 };
 
 module.exports = { register, login, getMe };

@@ -73,7 +73,10 @@ export class NotificationBellComponent {
 
   handleNotifClick(n: any) {
     if (!n.read) {
-      n.read = true;
+      // Use the service's immutable update to correctly trigger change detection
+      this.notificationService.notifications.update(list =>
+        list.map(item => item.id === n.id ? { ...item, read: true } : item)
+      );
       this.notificationService.unreadCount.update(c => Math.max(0, c - 1));
     }
     

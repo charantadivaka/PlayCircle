@@ -26,9 +26,9 @@ import { environment } from '../../../environments/environment';
               <div class="avatar xl mb-4">
                 <img *ngIf="avatarPreview" [src]="avatarPreview" alt="Avatar Preview" />
                 <img *ngIf="!avatarPreview && userAvatar" [src]="userAvatar" alt="Avatar" />
-                <ng-template #noAvatar *ngIf="!avatarPreview && !userAvatar">
+                <div *ngIf="!avatarPreview && !userAvatar" class="avatar-initial">
                   {{ auth.currentUser()?.name?.charAt(0)?.toUpperCase() }}
-                </ng-template>
+                </div>
               </div>
               
               <div class="form-group mb-0">

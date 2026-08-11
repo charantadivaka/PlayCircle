@@ -96,7 +96,20 @@ export class ConversationListComponent implements OnInit {
 
   getOtherUser(conv: Conversation): User {
     const me = this.auth.currentUser()?._id;
-    return conv.participants.find(p => p._id !== me) as User;
+    const other = conv.participants.find(p => p._id !== me);
+    // Fallback stub prevents template crashes if data is inconsistent
+    return other ?? {
+      _id: '',
+      name: 'Unknown User',
+      email: '',
+      avatar: null,
+      sports: [],
+      skillLevel: 'Beginner',
+      location: { type: 'Point', coordinates: [0, 0] },
+      isOnline: false,
+      lastSeen: '',
+      createdAt: '',
+    };
   }
   
   getAvatarUrl(user: User) {

@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, effect } from '@angular/core';
+import { Component, OnDestroy, effect } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
 import { SocketService } from './core/services/socket.service';
 import { NotificationService } from './core/services/notification.service';
+import { LocationService } from './core/services/location.service';
 import { Subscription } from 'rxjs';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
 
@@ -22,27 +23,41 @@ import { NavbarComponent } from './shared/components/navbar/navbar.component';
     main.with-navbar { padding-top: 64px; }
   `],
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnDestroy {
   private subs: Subscription[] = [];
+  private socketListening = false;
 
   constructor(
     public auth: AuthService,
     private socketService: SocketService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private locationService: LocationService
   ) {
-    // Whenever auth state changes, connect/disconnect socket
+    // Whenever auth state changes, connect/disconnect socket and GPS.
+    // We guard with socketListening so subscriptions are only set up once
+    // per login session, preventing them from stacking up.
     effect(() => {
       const token = this.auth.getToken();
       if (this.auth.isAuthenticated() && token) {
         this.socketService.connect(token);
-        this.listenToSocketEvents();
+        if (!this.socketListening) {
+          this.socketListening = true;
+          this.listenToSocketEvents();
+        }
       } else {
         this.socketService.disconnect();
+        this.locationService.stopWatching();
+        // Clear subscriptions so they are re-created fresh on next login
+        this.clearSocketSubs();
+        this.socketListening = false;
       }
     });
   }
 
-  ngOnInit() {}
+  private clearSocketSubs() {
+    this.subs.forEach(s => s.unsubscribe());
+    this.subs = [];
+  }
 
   private listenToSocketEvents() {
     this.subs.push(
@@ -79,6 +94,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.subs.forEach((s) => s.unsubscribe());
+    this.clearSocketSubs();
   }
 }

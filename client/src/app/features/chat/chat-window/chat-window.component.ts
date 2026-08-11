@@ -157,14 +157,16 @@ export class ChatWindowComponent implements OnInit, OnDestroy, AfterViewChecked 
     
     this.isSending = true;
     const text = this.newMessage.trim();
+    this.newMessage = '';
     
     try {
-      // Send via Socket.IO
-      const res = await this.socketService.sendMessage(this.conversationId, text);
-      this.messages.push(res.message);
-      this.newMessage = '';
-      this.shouldScrollToBottom = true;
+      // Send via Socket.IO. The server will emit message:receive to ALL
+      // participants (including the sender), so we do NOT push manually here
+      // to avoid duplicates.
+      await this.socketService.sendMessage(this.conversationId, text);
     } catch (err) {
+      // Restore the text so the user can retry
+      this.newMessage = text;
       console.error('Failed to send message', err);
     } finally {
       this.isSending = false;

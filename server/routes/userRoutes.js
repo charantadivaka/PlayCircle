@@ -15,7 +15,7 @@ router.use(protect);
 router.get('/nearby', getNearbyPlayers);
 router.patch('/location', updateLocation);
 
-router.get('/:id', getUserById);
+// Specific named routes MUST come before the wildcard /:id
 router.patch(
   '/profile',
   upload.single('avatar'),
@@ -25,5 +25,8 @@ router.patch(
   ],
   updateProfile
 );
+
+router.get('/:id', getUserById);
+
 
 module.exports = router;

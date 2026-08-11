@@ -1,4 +1,4 @@
-require('dotenv').config();
+// Note: dotenv is loaded in server.js (root) with an explicit path before this module is required.
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');

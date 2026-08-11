@@ -1,4 +1,4 @@
-import { Component, effect } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -23,7 +23,7 @@ import { environment } from '../../../../environments/environment';
           <a routerLink="/requests" routerLinkActive="active" class="nav-link">Requests</a>
           <app-notification-bell></app-notification-bell>
           
-          <div class="profile-menu" (click)="toggleMenu()">
+          <div class="profile-menu" (click)="toggleMenu($event)">
             <div class="avatar sm">
               <img *ngIf="userAvatar; else noAvatar" [src]="userAvatar" alt="Avatar" />
               <ng-template #noAvatar>{{ userInitials }}</ng-template>
@@ -87,6 +87,7 @@ import { environment } from '../../../../environments/environment';
       min-width: 200px; padding: 8px 0;
       display: flex; flex-direction: column;
       animation: fadeIn 0.2s ease;
+      z-index: 1001;
     }
     .dropdown-header {
       padding: 8px 16px; display: flex; flex-direction: column;
@@ -106,6 +107,14 @@ export class NavbarComponent {
 
   constructor(public auth: AuthService) {}
 
+  // Close the dropdown when user clicks anywhere outside the profile menu
+  @HostListener('document:click')
+  onDocumentClick() {
+    if (this.menuOpen) {
+      this.menuOpen = false;
+    }
+  }
+
   get userAvatar() {
     const avatar = this.auth.currentUser()?.avatar;
     return avatar ? `${environment.apiUrl.replace('/api', '')}/uploads/${avatar}` : null;
@@ -116,7 +125,10 @@ export class NavbarComponent {
     return name.charAt(0).toUpperCase();
   }
 
-  toggleMenu() {
+  toggleMenu(event: MouseEvent) {
+    // Stop propagation so the document click listener above does not
+    // immediately close the dropdown that was just opened.
+    event.stopPropagation();
     this.menuOpen = !this.menuOpen;
   }
 

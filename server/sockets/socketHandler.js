@@ -50,6 +50,16 @@ const initSocketHandler = (io, onlineUsers) => {
     // ─────────────────────────────────────────────
     socket.on('location:update', async ({ lng, lat }) => {
       try {
+        // Validate that coords are finite numbers within geographic bounds
+        if (
+          typeof lng !== 'number' || typeof lat !== 'number' ||
+          !isFinite(lng) || !isFinite(lat) ||
+          lng < -180 || lng > 180 ||
+          lat < -90  || lat > 90
+        ) {
+          console.warn(`location:update ignored — invalid coords from ${socket.user.name}: lng=${lng} lat=${lat}`);
+          return;
+        }
         await User.findByIdAndUpdate(userId, {
           location: { type: 'Point', coordinates: [lng, lat] },
         });

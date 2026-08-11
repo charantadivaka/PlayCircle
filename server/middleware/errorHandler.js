@@ -22,8 +22,9 @@ const errorHandler = (err, req, res, _next) => {
     return res.status(400).json({ message: err.message });
   }
 
-  // Default
-  res.status(err.status || 500).json({
+  // Default — check both .status (Express convention) and .statusCode (library convention)
+  const statusCode = err.status || err.statusCode || 500;
+  res.status(statusCode).json({
     message: err.message || 'Internal Server Error',
   });
 };
